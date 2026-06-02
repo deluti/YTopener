@@ -1,6 +1,4 @@
 # Ignore build and runtime artifacts
-*.exe
-*.exe~
 *.obj
 *.o
 *.lib
