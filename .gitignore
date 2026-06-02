@@ -1,0 +1,27 @@
+# Ignore build and runtime artifacts
+*.exe
+*.exe~
+*.obj
+*.o
+*.lib
+*.dll
+*.pdb
+*.ilk
+*.log
+*.out
+
+# Visual Studio / VS Code
+.vscode/
+*.code-workspace
+
+# Generated data/config
+.data/
+
+# Temporary files
+Thumbs.db
+Desktop.ini
+
+# Build folders
+build/
+bin/
+obj/
