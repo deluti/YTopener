@@ -36,22 +36,6 @@ YTopen is a lightweight Windows tray utility for quick YouTube search and channe
 - `edit` to change browser setup
 - `exit` to close the console
 
-## Build
-
-Use a Windows C/C++ toolchain.
-
-### MinGW / g++
-
-```powershell
-g++ main.c src/scripts/utils.c -I./src -o ytopen.exe -mwindows -lgdiplus -luser32 -lshell32
-```
-
-### MSVC
-
-```cmd
-cl /nologo /EHsc /W3 /O2 /Fe:ytopen.exe main.c src\scripts\utils.c /link gdiplus.lib user32.lib shell32.lib
-```
-
 ## Notes
 
 - put `assets/icon.jpg` or `assets/icon.ico` in the `assets` folder to change the tray icon
