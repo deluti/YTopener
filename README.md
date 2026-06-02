@@ -19,7 +19,7 @@ YTopen is a lightweight Windows tray utility for quick YouTube search and channe
 
 - `main.c` is the application entrypoint
 - `src/utils.h` declares helper functions and config access
-- `src/scripts/utils.cpp` implements:
+- `src/scripts/utils.c` implements:
   - tray icon and hotkey registration with WinAPI
   - console show/hide behavior and WM_CLOSE interception
   - browser selection and config file management
@@ -43,13 +43,13 @@ Use a Windows C/C++ toolchain.
 ### MinGW / g++
 
 ```powershell
-g++ main.c src/scripts/utils.cpp -I./src -o ytopen.exe -mwindows -lgdiplus -luser32 -lshell32
+g++ main.c src/scripts/utils.c -I./src -o ytopen.exe -mwindows -lgdiplus -luser32 -lshell32
 ```
 
 ### MSVC
 
 ```cmd
-cl /nologo /EHsc /W3 /O2 /Fe:ytopen.exe main.c src\scripts\utils.cpp /link gdiplus.lib user32.lib shell32.lib
+cl /nologo /EHsc /W3 /O2 /Fe:ytopen.exe main.c src\scripts\utils.c /link gdiplus.lib user32.lib shell32.lib
 ```
 
 ## Notes
