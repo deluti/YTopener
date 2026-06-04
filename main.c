@@ -4,17 +4,21 @@
 #include "src/utils.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    char browser[256];
+    char browser[256] = {0};
     
-    if (!directory_exists("./.data")) {
-        create_directory(".data");
+    // Создаём папку конфига если её нет
+    if (!directory_exists(get_config_dir())) {
+        create_directory(get_config_dir());
     }
     
-    if (!file_exists("./.data/config.yml")) {
+    if (!file_exists(get_config_file_path())) {
         config_create();
     }
     
-    config_get_browser(browser, sizeof(browser));
+    if (!config_get_browser(browser, sizeof(browser))) {
+        strncpy(browser, "null", sizeof(browser) - 1);
+        browser[sizeof(browser) - 1] = '\0';
+    }
     
     if (strcmp(browser, "null") == 0) {
         AllocConsole();

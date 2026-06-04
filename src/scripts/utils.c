@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
 #include <sys/stat.h>
 #include <gdiplus.h>
 #include "../utils.h"
@@ -24,6 +23,23 @@ HWND hwnd;
 char current_browser[256];
 static WNDPROC originalConsoleProc = NULL;
 static ULONG_PTR gdiToken = 0;
+
+const char* get_config_dir(void) {
+    static char path[MAX_PATH];
+    const char *appdata = getenv("APPDATA");
+    if (!appdata) {
+        appdata = getenv("USERPROFILE");
+    }
+    snprintf(path, sizeof(path), "%s\\YTopen", appdata);
+    return path;
+}
+
+const char* get_config_file_path(void) {
+    static char path[MAX_PATH];
+    const char *dir = get_config_dir();
+    snprintf(path, sizeof(path), "%s\\config.yml", dir);
+    return path;
+}
 
 static void to_utf8(const char *src, char *dest, size_t destSize) {
     if (!src || !dest) return;
@@ -51,15 +67,15 @@ static HICON load_custom_icon(void) {
         GdiplusStartupInput gdiInput;
         if (GdiplusStartup(&gdiToken, &gdiInput, NULL) != Ok) gdiToken = 0;
     }
-    if (gdiToken == 0) return NULL;
+    if (gdiToken == 0) return LoadIcon(NULL, IDI_APPLICATION);
     WCHAR path[MAX_PATH];
-    if (!MultiByteToWideChar(CP_UTF8, 0, "assets\\icon.jpg", -1, path, MAX_PATH)) return NULL;
+    if (!MultiByteToWideChar(CP_UTF8, 0, "assets\\icon.jpg", -1, path, MAX_PATH)) return LoadIcon(NULL, IDI_APPLICATION);
     GpBitmap *bitmap = NULL;
-    if (DllExports::GdipCreateBitmapFromFile(path, &bitmap) != Ok) return NULL;
+    if (DllExports::GdipCreateBitmapFromFile(path, &bitmap) != Ok) return LoadIcon(NULL, IDI_APPLICATION);
     HBITMAP hBitmap = NULL;
     if (DllExports::GdipCreateHBITMAPFromBitmap(bitmap, &hBitmap, 0) != Ok) {
         DllExports::GdipDisposeImage((GpImage*)bitmap);
-        return NULL;
+        return LoadIcon(NULL, IDI_APPLICATION);
     }
     DllExports::GdipDisposeImage((GpImage*)bitmap);
     ICONINFO info = {0};
@@ -69,7 +85,7 @@ static HICON load_custom_icon(void) {
     HICON result = CreateIconIndirect(&info);
     DeleteObject(info.hbmMask);
     DeleteObject(hBitmap);
-    return result;
+    return result ? result : LoadIcon(NULL, IDI_APPLICATION);
 }
 
 LRESULT CALLBACK ConsoleWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -178,12 +194,8 @@ void run_tray_mode(void) {
 }
 
 int directory_exists(const char *path) {
-    DIR *dir = opendir(path);
-    if (dir) {
-        closedir(dir);
-        return 1;
-    }
-    return 0;
+    DWORD attrs = GetFileAttributesA(path);
+    return (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY));
 }
 
 int create_directory(const char *path) {
@@ -192,16 +204,12 @@ int create_directory(const char *path) {
 }
 
 int file_exists(const char *path) {
-    FILE *file = fopen(path, "r");
-    if (file) {
-        fclose(file);
-        return 1;
-    }
-    return 0;
+    DWORD attrs = GetFileAttributesA(path);
+    return (attrs != INVALID_FILE_ATTRIBUTES && !(attrs & FILE_ATTRIBUTE_DIRECTORY));
 }
 
 int config_create(void) {
-    FILE *file = fopen(".data/config.yml", "w");
+    FILE *file = fopen(get_config_file_path(), "w");
     if (!file) return 0;
     fprintf(file, "browser: \"null\"\n");
     fclose(file);
@@ -209,7 +217,7 @@ int config_create(void) {
 }
 
 int config_get_browser(char *browser, size_t size) {
-    FILE *file = fopen(".data/config.yml", "r");
+    FILE *file = fopen(get_config_file_path(), "r");
     if (!file) return 0;
     char line[256];
     while (fgets(line, sizeof(line), file)) {
@@ -232,7 +240,7 @@ int config_get_browser(char *browser, size_t size) {
 }
 
 int config_set_browser(const char *browser) {
-    FILE *file = fopen(".data/config.yml", "w");
+    FILE *file = fopen(get_config_file_path(), "w");
     if (!file) return 0;
     fprintf(file, "browser: \"%s\"\n", browser);
     fclose(file);
@@ -298,7 +306,7 @@ int add_to_startup(void) {
     char exe_path[MAX_PATH];
     char startup_path[MAX_PATH];
     char command[MAX_PATH * 2];
-    GetModuleFileName(NULL, exe_path, MAX_PATH);
+    GetModuleFileNameA(NULL, exe_path, MAX_PATH);
     snprintf(startup_path, sizeof(startup_path), "%s\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup", getenv("USERPROFILE"));
     snprintf(command, sizeof(command), "copy /Y \"%s\" \"%s\\YTopen.exe\"", exe_path, startup_path);
     return system(command) == 0;
@@ -309,7 +317,7 @@ int remove_from_startup(void) {
     char file_path[MAX_PATH];
     snprintf(startup_path, sizeof(startup_path), "%s\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup", getenv("USERPROFILE"));
     snprintf(file_path, sizeof(file_path), "%s\\YTopen.exe", startup_path);
-    if (file_exists(file_path)) return DeleteFile(file_path);
+    if (file_exists(file_path)) return DeleteFileA(file_path);
     return 1;
 }
 
